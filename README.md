@@ -1,2 +1,2 @@
 # Bitmapper
-A CLI tool for compressing Bitmap files to JPEGs.
+A CLI tool made in C++ for compressing Bitmap files to JPEGs.
