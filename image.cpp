@@ -6,6 +6,8 @@
 
 #include "image.h"
 
+Image::Image() : m_width(0), m_height(0) {}
+
 Color::Color() : r(0), g(0), b(0) {}
 
 Color::Color(float r, float g, float b) : r(r), g(g), b(b) {}
@@ -28,10 +30,61 @@ void Image::setColor(Color const& color, int x, int y)     // setting the color 
     m_colors[y * m_width + x].b = color.b;
 }
 
-void Image::Export(const char *path) const
+void Image::Read(const char* filename)
+{
+    std::ifstream f;
+    f.open(filename, std::ios::in | std::ios::binary);
+
+    if (!f.is_open())
+    {
+        std::cout << "Error opening file" << std::endl;
+        return;
+    }
+    const int fileHeaderSize = 14;
+    const int informationHeaderSize = 40;
+
+    unsigned char BMPfileHeader[fileHeaderSize];
+    f.read(reinterpret_cast<char*>(BMPfileHeader), fileHeaderSize);
+
+    if (BMPfileHeader[0] != 'B' || BMPfileHeader[1] != 'M')
+    {
+        std::cout << "File is not a BMP!" << std::endl;
+        return;
+    }
+
+    unsigned char informationHeader[informationHeaderSize];
+    f.read(reinterpret_cast<char*>(informationHeader), informationHeaderSize);
+
+    int fileSize = BMPfileHeader[2] + (BMPfileHeader[3] << 8) + (BMPfileHeader[4] << 16) + (BMPfileHeader[5] << 24);    // the inverse of writing to the file, as seen in the Export method
+    m_width = informationHeader[4] + (informationHeader[5] << 8) + (informationHeader[6] << 16) + (informationHeader[7] << 24);
+    m_height = informationHeader[8] + (informationHeader[9] << 8) + (informationHeader[10] << 16) + (informationHeader[11] << 24);
+
+    m_colors.resize(m_width * m_height);
+
+    const int paddingAmount = ((4 - (m_width * 3) % 4) % 4);
+
+    for (int y = 0; y < m_height; y++)
+    {
+        for (int x = 0; x < m_width; x++)
+        {
+            unsigned char color[3];
+            f.read(reinterpret_cast<char*>(color), 3);
+
+            m_colors[y * m_width + x].r = static_cast<float>(color[2]) / 255.0f;
+            m_colors[y * m_width + x].g = static_cast<float>(color[1]) / 255.0f;
+            m_colors[y * m_width + x].b = static_cast<float>(color[0]) / 255.0f;
+        }
+        f.ignore(paddingAmount);
+    }
+
+    f.close();
+    std::cout << "File read!" << std::endl;
+}
+
+void Image::Export(const char* filename) const
 {
     std::fstream f;
-    f.open(path, std::ios::out | std::ios::binary);     // writing in binary
+    f.open(filename, std::ios::out | std::ios::binary);     // writing in binary
 
     if (!f.is_open())
     {

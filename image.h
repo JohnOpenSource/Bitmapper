@@ -20,13 +20,15 @@ class Image
     std::vector<Color> m_colors;
     
     public:
+    Image();
     Image(int width, int height);
     ~Image();
 
     Color getColor(int x, int y) const;
     void setColor(const Color& color, int x, int y);
 
-    void Export(const char* path) const;
+    void Read(const char* filename);
+    void Export(const char* filename) const;
 };
 
 
